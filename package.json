@@ -1,0 +1,25 @@
+{
+	"name": "templates-page-display",
+	"version": "1.0.0",
+	"description": "Obsidian plugin to display and insert templates from the Templater folder",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+		"test": "jest",
+		"test:watch": "jest --watch"
+	},
+	"keywords": [],
+	"license": "MIT",
+	"devDependencies": {
+		"@types/jest": "^29.5.0",
+		"@types/node": "^16.11.6",
+		"builtin-modules": "^3.3.0",
+		"esbuild": "0.17.3",
+		"jest": "^29.5.0",
+		"obsidian": "latest",
+		"ts-jest": "^29.1.0",
+		"tslib": "2.4.0",
+		"typescript": "5.0.4"
+	}
+}
