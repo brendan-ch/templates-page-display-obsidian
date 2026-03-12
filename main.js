@@ -72,6 +72,7 @@ var TemplatesView = class extends import_obsidian.ItemView {
   async onClose() {
   }
   async refresh() {
+    var _a, _b, _c;
     const container = this.containerEl.children[1];
     container.empty();
     container.addClass("templates-page-container");
@@ -84,10 +85,15 @@ var TemplatesView = class extends import_obsidian.ItemView {
     refreshBtn.setText("\u21BA");
     refreshBtn.addEventListener("click", () => this.refresh());
     let templatesFolder = "";
-    try {
-      const data = await this.app.vault.adapter.read(TEMPLATER_DATA_PATH);
-      templatesFolder = getTemplatesFolder(data);
-    } catch (e) {
+    const templater = (_b = (_a = this.app.plugins) == null ? void 0 : _a.plugins) == null ? void 0 : _b["templater-obsidian"];
+    if ((_c = templater == null ? void 0 : templater.settings) == null ? void 0 : _c.templates_folder) {
+      templatesFolder = templater.settings.templates_folder;
+    } else {
+      try {
+        const data = await this.app.vault.adapter.read(TEMPLATER_DATA_PATH);
+        templatesFolder = getTemplatesFolder(data);
+      } catch (e) {
+      }
     }
     if (!templatesFolder) {
       container.createEl("p", {
@@ -164,10 +170,8 @@ var TemplatesPagePlugin = class extends import_obsidian2.Plugin {
       this.app.workspace.revealLeaf(existing[0]);
       return;
     }
-    const leaf = this.app.workspace.getRightLeaf(false);
-    if (leaf) {
-      await leaf.setViewState({ type: VIEW_TYPE_TEMPLATES, active: true });
-      this.app.workspace.revealLeaf(leaf);
-    }
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({ type: VIEW_TYPE_TEMPLATES, active: true });
+    this.app.workspace.revealLeaf(leaf);
   }
 };

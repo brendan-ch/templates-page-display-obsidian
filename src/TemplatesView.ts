@@ -42,13 +42,18 @@ export class TemplatesView extends ItemView {
 		refreshBtn.setText("↺");
 		refreshBtn.addEventListener("click", () => this.refresh());
 
-		// Read Templater settings
+		// Read Templater settings — try live plugin object first, fall back to data.json
 		let templatesFolder = "";
-		try {
-			const data = await this.app.vault.adapter.read(TEMPLATER_DATA_PATH);
-			templatesFolder = getTemplatesFolder(data);
-		} catch {
-			// Templater not installed or data.json unreadable
+		const templater = (this.app as any).plugins?.plugins?.["templater-obsidian"];
+		if (templater?.settings?.templates_folder) {
+			templatesFolder = templater.settings.templates_folder;
+		} else {
+			try {
+				const data = await this.app.vault.adapter.read(TEMPLATER_DATA_PATH);
+				templatesFolder = getTemplatesFolder(data);
+			} catch {
+				// Templater not installed or data.json unreadable
+			}
 		}
 
 		if (!templatesFolder) {
