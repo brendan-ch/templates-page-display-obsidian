@@ -1,7 +1,7 @@
 {
 	"id": "templates-page-display",
 	"name": "Templates Page Display",
-	"version": "1.0.0",
+	"version": "0.2.0",
 	"minAppVersion": "0.15.0",
 	"description": "Displays a list of templates from the Templater plugin's folder on a custom page, with one-click insert buttons.",
 	"author": "brendan-ch",

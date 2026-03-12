@@ -30,10 +30,8 @@ export default class TemplatesPagePlugin extends Plugin {
 			return;
 		}
 
-		const leaf = this.app.workspace.getRightLeaf(false);
-		if (leaf) {
-			await leaf.setViewState({ type: VIEW_TYPE_TEMPLATES, active: true });
-			this.app.workspace.revealLeaf(leaf);
-		}
+		const leaf = this.app.workspace.getLeaf("tab");
+		await leaf.setViewState({ type: VIEW_TYPE_TEMPLATES, active: true });
+		this.app.workspace.revealLeaf(leaf);
 	}
 }
