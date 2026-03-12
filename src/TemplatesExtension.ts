@@ -1,17 +1,15 @@
 import { App, TFile } from "obsidian";
 import { Extension, StateField } from "@codemirror/state";
 import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/view";
-import { filterTemplateFiles, getTemplatesFolder } from "./templateUtils";
-
-const TEMPLATER_DATA_PATH = ".obsidian/plugins/templater-obsidian/data.json";
+import { filterTemplateFiles } from "./templateUtils";
 
 class TemplatesWidget extends WidgetType {
-	constructor(private app: App) {
+	constructor(private app: App, private folder: string) {
 		super();
 	}
 
-	eq(_other: TemplatesWidget): boolean {
-		return true;
+	eq(other: TemplatesWidget): boolean {
+		return this.folder === other.folder;
 	}
 
 	toDOM(view: EditorView): HTMLElement {
@@ -25,25 +23,9 @@ class TemplatesWidget extends WidgetType {
 		container: HTMLElement,
 		editorView: EditorView
 	): Promise<void> {
-		let templatesFolder = "";
-		const templater = (this.app as any).plugins?.plugins?.[
-			"templater-obsidian"
-		];
-		if (templater?.settings?.templates_folder) {
-			templatesFolder = templater.settings.templates_folder;
-		} else {
-			try {
-				const data =
-					await this.app.vault.adapter.read(TEMPLATER_DATA_PATH);
-				templatesFolder = getTemplatesFolder(data);
-			} catch {
-				// Templater not installed or data.json unreadable
-			}
-		}
-
-		if (!templatesFolder) {
+		if (!this.folder) {
 			container.createEl("p", {
-				text: "Configure a templates folder in Templater settings.",
+				text: "Set a templates folder in plugin settings.",
 				cls: "templates-widget-notice",
 			});
 			return;
@@ -52,12 +34,12 @@ class TemplatesWidget extends WidgetType {
 		const allFiles = this.app.vault.getFiles();
 		const templateFiles = filterTemplateFiles(
 			allFiles.map((f) => ({ path: f.path, name: f.name })),
-			templatesFolder
+			this.folder
 		);
 
 		if (templateFiles.length === 0) {
 			container.createEl("p", {
-				text: `No templates found in "${templatesFolder}".`,
+				text: `No templates found in "${this.folder}".`,
 				cls: "templates-widget-notice",
 			});
 			return;
@@ -104,13 +86,19 @@ class TemplatesWidget extends WidgetType {
 	}
 }
 
-export function buildTemplatesExtension(app: App): Extension {
-	function buildDecorations(state: import("@codemirror/state").EditorState): DecorationSet {
+export function buildTemplatesExtension(
+	app: App,
+	getFolder: () => string
+): Extension {
+	function buildDecorations(
+		state: import("@codemirror/state").EditorState
+	): DecorationSet {
 		if (state.doc.toString().trim().length > 0) {
 			return Decoration.none;
 		}
+		const folder = getFolder();
 		const widget = Decoration.widget({
-			widget: new TemplatesWidget(app),
+			widget: new TemplatesWidget(app, folder),
 			block: true,
 			side: 1,
 		});

@@ -29,16 +29,6 @@ var import_state = require("@codemirror/state");
 var import_view = require("@codemirror/view");
 
 // src/templateUtils.ts
-function getTemplatesFolder(data) {
-  if (!data)
-    return "";
-  try {
-    const parsed = JSON.parse(data);
-    return typeof parsed.templates_folder === "string" ? parsed.templates_folder : "";
-  } catch (e) {
-    return "";
-  }
-}
 function filterTemplateFiles(files, folder) {
   if (!folder)
     return [];
@@ -52,14 +42,14 @@ function filterTemplateFiles(files, folder) {
 }
 
 // src/TemplatesExtension.ts
-var TEMPLATER_DATA_PATH = ".obsidian/plugins/templater-obsidian/data.json";
 var TemplatesWidget = class extends import_view.WidgetType {
-  constructor(app) {
+  constructor(app, folder) {
     super();
     this.app = app;
+    this.folder = folder;
   }
-  eq(_other) {
-    return true;
+  eq(other) {
+    return this.folder === other.folder;
   }
   toDOM(view) {
     const container = document.createElement("div");
@@ -68,21 +58,9 @@ var TemplatesWidget = class extends import_view.WidgetType {
     return container;
   }
   async renderAsync(container, editorView) {
-    var _a, _b, _c;
-    let templatesFolder = "";
-    const templater = (_b = (_a = this.app.plugins) == null ? void 0 : _a.plugins) == null ? void 0 : _b["templater-obsidian"];
-    if ((_c = templater == null ? void 0 : templater.settings) == null ? void 0 : _c.templates_folder) {
-      templatesFolder = templater.settings.templates_folder;
-    } else {
-      try {
-        const data = await this.app.vault.adapter.read(TEMPLATER_DATA_PATH);
-        templatesFolder = getTemplatesFolder(data);
-      } catch (e) {
-      }
-    }
-    if (!templatesFolder) {
+    if (!this.folder) {
       container.createEl("p", {
-        text: "Configure a templates folder in Templater settings.",
+        text: "Set a templates folder in plugin settings.",
         cls: "templates-widget-notice"
       });
       return;
@@ -90,11 +68,11 @@ var TemplatesWidget = class extends import_view.WidgetType {
     const allFiles = this.app.vault.getFiles();
     const templateFiles = filterTemplateFiles(
       allFiles.map((f) => ({ path: f.path, name: f.name })),
-      templatesFolder
+      this.folder
     );
     if (templateFiles.length === 0) {
       container.createEl("p", {
-        text: `No templates found in "${templatesFolder}".`,
+        text: `No templates found in "${this.folder}".`,
         cls: "templates-widget-notice"
       });
       return;
@@ -132,13 +110,14 @@ var TemplatesWidget = class extends import_view.WidgetType {
     });
   }
 };
-function buildTemplatesExtension(app) {
+function buildTemplatesExtension(app, getFolder) {
   function buildDecorations(state) {
     if (state.doc.toString().trim().length > 0) {
       return import_view.Decoration.none;
     }
+    const folder = getFolder();
     const widget = import_view.Decoration.widget({
-      widget: new TemplatesWidget(app),
+      widget: new TemplatesWidget(app, folder),
       block: true,
       side: 1
     });
@@ -152,8 +131,36 @@ function buildTemplatesExtension(app) {
 }
 
 // src/main.ts
+var DEFAULT_SETTINGS = {
+  templatesFolder: ""
+};
 var TemplatesPagePlugin = class extends import_obsidian.Plugin {
   async onload() {
-    this.registerEditorExtension(buildTemplatesExtension(this.app));
+    await this.loadSettings();
+    this.addSettingTab(new TemplatesSettingTab(this.app, this));
+    this.registerEditorExtension(
+      buildTemplatesExtension(this.app, () => this.settings.templatesFolder)
+    );
+  }
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+  async saveSettings() {
+    await this.saveData(this.settings);
+  }
+};
+var TemplatesSettingTab = class extends import_obsidian.PluginSettingTab {
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+  display() {
+    this.containerEl.empty();
+    new import_obsidian.Setting(this.containerEl).setName("Templates folder").setDesc("Path to your templates folder (e.g. Templates)").addText(
+      (text) => text.setPlaceholder("Templates").setValue(this.plugin.settings.templatesFolder).onChange(async (value) => {
+        this.plugin.settings.templatesFolder = value.trim();
+        await this.plugin.saveSettings();
+      })
+    );
   }
 };
