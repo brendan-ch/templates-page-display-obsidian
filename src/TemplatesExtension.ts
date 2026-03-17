@@ -96,6 +96,13 @@ export function buildTemplatesExtension(
 		if (state.doc.toString().trim().length > 0) {
 			return Decoration.none;
 		}
+		// Obsidian's live preview creates sub-editors for table cells. If the
+		// main editor has content while this state is empty, we're inside a
+		// table cell (or similar embedded editor) — don't show the widget.
+		const mainContent = app.workspace.activeEditor?.editor?.getValue();
+		if (mainContent && mainContent.trim().length > 0) {
+			return Decoration.none;
+		}
 		const folder = getFolder();
 		const widget = Decoration.widget({
 			widget: new TemplatesWidget(app, folder),

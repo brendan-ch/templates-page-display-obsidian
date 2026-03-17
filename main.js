@@ -112,7 +112,12 @@ var TemplatesWidget = class extends import_view.WidgetType {
 };
 function buildTemplatesExtension(app, getFolder) {
   function buildDecorations(state) {
+    var _a, _b;
     if (state.doc.toString().trim().length > 0) {
+      return import_view.Decoration.none;
+    }
+    const mainContent = (_b = (_a = app.workspace.activeEditor) == null ? void 0 : _a.editor) == null ? void 0 : _b.getValue();
+    if (mainContent && mainContent.trim().length > 0) {
       return import_view.Decoration.none;
     }
     const folder = getFolder();
